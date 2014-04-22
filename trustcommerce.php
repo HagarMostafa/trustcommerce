@@ -171,120 +171,83 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
    * @public
    */
   function doRecurPayment(&$params) {
-    $template = CRM_Core_Smarty::singleton();
+    $payments = $this->_getParam('frequency_interval');
+    $cycle = $this->_getParam('frequency_unit');
 
-    $intervalLength = $this->_getParam('frequency_interval');
-    $intervalUnit = $this->_getParam('frequency_unit');
-    if ($intervalUnit == 'week') {
-      $intervalLength *= 7;
-      $intervalUnit = 'days';
+    /* Sort out our billing scheme */
+    switch($cycle) {
+    case 'day':
+      $cycle = 'd';
+      break;
+    case 'week':
+      $cycle = 'w';
+      break;
+    case 'month':
+      $cycle = 'm';
+      break;
+    case 'year':
+      $cycle = 'y';
+      break;
+    default:
+      return self::error(9001, 'Payment interval not set! Unable to process payment.');
+      break;
     }
-    elseif ($intervalUnit == 'year') {
-      $intervalLength *= 12;
-      $intervalUnit = 'months';
+
+
+    $params['authnow'] = 'y';    /* Process this payment `now' */    
+    $params['cycle'] = $cycle;   /* The billing cycle in years, months, weeks, or days. */
+    $params['payments'] = $payments;
+
+
+    $tclink = $this->_getTrustCommerceFields();
+
+    // Set up our call for hook_civicrm_paymentProcessor,
+    // since we now have our parameters as assigned for the AIM back end.
+    CRM_Utils_Hook::alterPaymentProcessorParams($this,
+      $params,
+      $tclink
+    );
+
+    // TrustCommerce will not refuse duplicates, so we should check if the user already submitted this transaction
+    if ($this->_checkDupe($tclink['ticket'])) {
+      return self::error(9004, 'It appears that this transaction is a duplicate.  Have you already submitted the form once?  If so there may have been a connection problem. You can try your transaction again.  If you continue to have problems please contact the site administrator.');
     }
-    elseif ($intervalUnit == 'day') {
-      $intervalUnit = 'days';
-    }
-    elseif ($intervalUnit == 'month') {
-      $intervalUnit = 'months';
-    }
 
-    // interval cannot be less than 7 days or more than 1 year
-    if ($intervalUnit == 'days') {
-      if ($intervalLength < 7) {
-        return self::error(9001, 'Payment interval must be at least one week');
-      }
-      elseif ($intervalLength > 365) {
-        return self::error(9001, 'Payment interval may not be longer than one year');
-      }
-    }
-    elseif ($intervalUnit == 'months') {
-      if ($intervalLength < 1) {
-        return self::error(9001, 'Payment interval must be at least one week');
-      }
-      elseif ($intervalLength > 12) {
-        return self::error(9001, 'Payment interval may not be longer than one year');
-      }
-    }
-    
-    $template->assign('intervalLength', $intervalLength);
-    $template->assign('intervalUnit', $intervalUnit);
+    $result = tclink_send($tclink);
 
-    $template->assign('apiLogin', $this->_getParam('apiLogin'));
-    $template->assign('paymentKey', $this->_getParam('paymentKey'));
-    $template->assign('refId', substr($this->_getParam('invoiceID'), 0, 20));
 
-    //for recurring, carry first contribution id
-    $template->assign('invoiceNumber', $this->_getParam('contributionID'));
-    $firstPaymentDate = $this->_getParam('receive_date');
-    if (!empty($firstPaymentDate)) {
-      //allow for post dated payment if set in form
-      $template->assign('startDate', date('Y-m-d', strtotime($firstPaymentDate)));
-    }
-    else {
-      $template->assign('startDate', date('Y-m-d'));
-    }
-    // for open ended subscription totalOccurrences has to be 9999
-    $installments = $this->_getParam('installments');
-    $template->assign('totalOccurrences', $installments ? $installments : 9999);
-
-    $template->assign('amount', $this->_getParam('amount'));
-
-    $template->assign('cardNumber', $this->_getParam('credit_card_number'));
-    $exp_month = str_pad($this->_getParam('month'), 2, '0', STR_PAD_LEFT);
-    $exp_year = $this->_getParam('year');
-    $template->assign('expirationDate', $exp_year . '-' . $exp_month);
-    // name rather than description is used in the tpl - see http://www.authorize.net/support/ARB_guide.pdf
-    $template->assign('name', $this->_getParam('description'));
-
-    $template->assign('email', $this->_getParam('email'));
-    $template->assign('contactID', $this->_getParam('contactID'));
-    $template->assign('billingFirstName', $this->_getParam('billing_first_name'));
-    $template->assign('billingLastName', $this->_getParam('billing_last_name'));
-    $template->assign('billingAddress', $this->_getParam('street_address'));
-    $template->assign('billingCity', $this->_getParam('city'));
-    $template->assign('billingState', $this->_getParam('state_province'));
-    $template->assign('billingZip', $this->_getParam('postal_code'));
-    $template->assign('billingCountry', $this->_getParam('country'));
-
-    $arbXML = $template->fetch('CRM/Contribute/Form/Contribution/AuthorizeNetARB.tpl');
-    // submit to authorize.net
-
-    $submit = curl_init($this->_paymentProcessor['url_recur']);
-    if (!$submit) {
+    /* DUPLIATE CODE, please refactor. ~lisa */
+    if (!$result) {
       return self::error(9002, 'Could not initiate connection to payment gateway');
     }
-    curl_setopt($submit, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($submit, CURLOPT_HTTPHEADER, array("Content-Type: text/xml"));
-    curl_setopt($submit, CURLOPT_HEADER, 1);
-    curl_setopt($submit, CURLOPT_POSTFIELDS, $arbXML);
-    curl_setopt($submit, CURLOPT_POST, 1);
-    curl_setopt($submit, CURLOPT_SSL_VERIFYPEER, 0);
 
-    $response = curl_exec($submit);
-
-    if (!$response) {
-      return self::error(curl_errno($submit), curl_error($submit));
+   
+    switch($result['status']) {
+    case self::AUTH_APPROVED:
+      // It's all good
+      break;
+    case self::AUTH_DECLINED:
+      // TODO FIXME be more or less specific? 
+      // declinetype can be: decline, avs, cvv, call, expiredcard, carderror, authexpired, fraud, blacklist, velocity
+      // See TC documentation for more info
+      return self::error(9009, "Your transaction was declined: {$result['declinetype']}");
+      break;
+    case self::AUTH_BADDATA:
+      // TODO FIXME do something with $result['error'] and $result['offender']
+      return self::error(9011, "Invalid credit card information. Please re-enter.");
+      break;
+    case self::AUTH_ERROR:
+      return self::error(9002, 'Could not initiate connection to payment gateway');
+      break;
     }
+    
+    // Success
 
-    curl_close($submit);
-    $responseFields = $this->_ParseArbReturn($response);
+    $params['trxn_id'] = $result['transid'];
+    $params['gross_amount'] = $tclink['amount'] / 100;
 
-    if ($responseFields['resultCode'] == 'Error') {
-      return self::error($responseFields['code'], $responseFields['text']);
-    }
-
-    // update recur processor_id with subscriptionId
-    CRM_Core_DAO::setFieldValue('CRM_Contribute_DAO_ContributionRecur', $params['contributionRecurID'],
-      'processor_id', $responseFields['subscriptionId']
-    );
-    //only impact of assigning this here is is can be used to cancel the subscription in an automated test
-    // if it isn't cancelled a duplicate transaction error occurs
-    if (CRM_Utils_Array::value('subscriptionId', $responseFields)) {
-      $this->_setParam('subscriptionId', $responseFields['subscriptionId']);
-    }
     return $params;
+
   }
 
   function _getTrustCommerceFields() {
@@ -482,5 +445,3 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
 }
-
-
