@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension key="org.fsf.payment.trustcommerce" type="payment">
+  <downloadUrl>http://agpl.fsf.org/crm.fsf.org/CURRENT/trustcommerce-0.1.zip</downloadUrl>
+  <file>trustcommerce</file>
+  <name>TrustCommerce</name>
+  <description>TrustCommerce Payment Processor</description>
+  <urls> 
+    <url desc="FSF Homepage">http://www.fsf.org</url>
+  </urls>
+  <license>AGPL3</license>
+  <maintainer>
+    <author>Nico Cesar, Ward Vandewege</author>
+    <email>sysadmin@fsf.org</email>
+  </maintainer>
+  <releaseDate>2014-02-11</releaseDate>
+  <version>0.3</version>
+  <develStage>beta</develStage>
+  <compatibility>
+    <ver>4.4</ver>
+  </compatibility>
+  <comments>For support, please contact project team on the forums.</comments>
+  <typeInfo>
+   <userNameLabel>Vendor ID</userNameLabel>
+   <passwordLabel>Password</passwordLabel>
+   <signatureLabel></signatureLabel>
+   <subjectLabel></subjectLabel>
+   <urlSiteDefault>https://vault.trustcommerce.com/trans/</urlSiteDefault>
+   <urlApiDefault></urlApiDefault>
+   <urlRecurDefault>https://vault.trustcommerce.com/trans/</urlRecurDefault>
+   <!-- 2014-02-11 nico@fsf.org : couldn't find a trustcommerce *test* URL -->
+   <!-- seems it's done with credit card numbers. See: -->
+   <!-- https://vault.trustcommerce.com/downloads/TCDevGuide.html#testdata --> 
+   <urlSiteTestDefault>https://vault.trustcommerce.com/trans/</urlSiteTestDefault>
+   <urlApiTestDefault>https://vault.trustcommerce.com/trans/</urlApiTestDefault>
+   <urlRecurTestDefault>https://vault.trustcommerce.com/trans/</urlRecurTestDefault>
+   <urlButtonDefault></urlButtonDefault>
+   <urlButtonTestDefault></urlButtonTestDefault>
+   <billingMode>form</billingMode>
+   <isRecur>1</isRecur>
+   <paymentType>1</paymentType>
+  </typeInfo>
+</extension>
