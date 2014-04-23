@@ -188,11 +188,11 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       // TODO FIXME be more or less specific? 
       // declinetype can be: decline, avs, cvv, call, expiredcard, carderror, authexpired, fraud, blacklist, velocity
       // See TC documentation for more info
-      return self::error(9009, "Your transaction was declined: {$result['declinetype']}");
+      return self::error(9009, "Your transaction was declined: {$reply['declinetype']}");
       break;
     case self::AUTH_BADDATA:
-      // TODO FIXME do something with $result['error'] and $result['offender']
-      return self::error(9011, "Invalid credit card information. Please re-enter.");
+      // TODO FIXME do something with $reply['error'] and $reply['offender']
+      return self::error(9011, "Invalid credit card information. The following fields were invalid: {$reply['offenders']}.");
       break;
     case self::AUTH_ERROR:
       return self::error(9002, 'Could not initiate connection to payment gateway');
