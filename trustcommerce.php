@@ -74,11 +74,9 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
   /**
-   * Submit a payment using Advanced Integration Method
-   *
-   * @param  array $params assoc array of input parameters for this transaction
-   *
-   * @return array the result in a nice formatted array (or an error object)
+   * Submit a payment using the TC API
+   * @param  array $params The params we will be sending to tclink_send()
+   * @return mixed An array of our results, or an error object if the transaction fails.
    * @public
    */
   function doDirectPayment(&$params) {
