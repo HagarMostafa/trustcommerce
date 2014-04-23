@@ -84,90 +84,63 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       return self::error(9001, 'TrustCommerce requires that the tclink module is loaded');
     }
 
-    $newParams = $params;
-    if (CRM_Utils_Array::value('is_recur', $params) &&
-      $params['contributionRecurID']
-    ) {
-      CRM_Utils_Hook::alterPaymentProcessorParams($this,
-        $params,
-        $newParams
-      );
-    }
-    foreach ($newParams as $field => $value) {
+    /* Copy our paramaters to ourself */
+    foreach ($params as $field => $value) {
       $this->_setParam($field, $value);
     }
 
-    if (CRM_Utils_Array::value('is_recur', $params) &&
-      $params['contributionRecurID']
-    ) {
-      return $this->doRecurPayment($params);
+    /* Get our fields to pass to tclink_send() */
+    $tc_params = $this->_getTrustCommerceFields();
+
+    /* Are we recurring? If so add the extra API fields. */
+    if (CRM_Utils_Array::value('is_recur', $params) && $params['contributionRecurID']) {
+      $tc_params = $this->_getRecurPaymentFields($tc_params);
     }
 
-    $postFields = array();
-    $tclink = $this->_getTrustCommerceFields();
-
-    // Set up our call for hook_civicrm_paymentProcessor,
-    // since we now have our parameters as assigned for the AIM back end.
+    /* Pass our cooked params to the alter hook, per Core/Payment/Dummy.php */
     CRM_Utils_Hook::alterPaymentProcessorParams($this,
       $params,
-      $tclink
+      $tc_params
     );
 
     // TrustCommerce will not refuse duplicates, so we should check if the user already submitted this transaction
-    if ($this->_checkDupe($tclink['ticket'])) {
+    if ($this->_checkDupe($tc_params['ticket'])) {
       return self::error(9004, 'It appears that this transaction is a duplicate.  Have you already submitted the form once?  If so there may have been a connection problem. You can try your transaction again.  If you continue to have problems please contact the site administrator.');
     }
 
-    $result = tclink_send($tclink);
+    /* Call the TC API, and grab the reply */
+    $reply = tclink_send($tc_params);
 
-    if (!$result) {
-      return self::error(9002, 'Could not initiate connection to payment gateway');
+    /* Parse our reply */
+    $result = $this->_getTrustCommerceReply($reply);
+
+    if($result == 0) {
+      /* We were successful, congrats. Lets wrap it up:
+       * Convert back to dollars
+       * Save the transaction ID
+       */
+      $params['trxn_id'] = $reply['transid'];
+      $params['gross_amount'] = $tc_params['amount'] / 100;
+
+      return $params;
+
+    } else {
+      /* Otherwise we return the error object */
+      return $result;
     }
-
-    foreach ($result as $field => $value) {
-      error_log("result: $field => $value");
-    }
-
-    switch($result['status']) {
-    case self::AUTH_APPROVED:
-      // It's all good
-      break;
-    case self::AUTH_DECLINED:
-      // TODO FIXME be more or less specific? 
-      // declinetype can be: decline, avs, cvv, call, expiredcard, carderror, authexpired, fraud, blacklist, velocity
-      // See TC documentation for more info
-      return self::error(9009, "Your transaction was declined: {$result['declinetype']}");
-      break;
-    case self::AUTH_BADDATA:
-      // TODO FIXME do something with $result['error'] and $result['offender']
-      return self::error(9011, "Invalid credit card information. Please re-enter.");
-      break;
-    case self::AUTH_ERROR:
-      return self::error(9002, 'Could not initiate connection to payment gateway');
-      break;
-    }
-    
-    // Success
-
-    $params['trxn_id'] = $result['transid'];
-    $params['gross_amount'] = $tclink['amount'] / 100;
-
-    return $params;
   }
 
   /**
-   * Submit an Automated Recurring Billing subscription
-   *
-   * @param  array $params assoc array of input parameters for this transaction
-   *
-   * @return array the result in a nice formatted array (or an error object)
+   * Gets the recurring billing fields for the TC API
+   * @param  array $fields The fields to modify.
+   * @return array The fields for tclink_send(), modified for recurring billing.
    * @public
    */
-  function doRecurPayment(&$params) {
+  function _getRecurPaymentFields($fields) {
     $payments = $this->_getParam('frequency_interval');
     $cycle = $this->_getParam('frequency_unit');
 
-    /* Sort out our billing scheme */
+    /* Translate billing cycle from CiviCRM -> TC */
     switch($cycle) {
     case 'day':
       $cycle = 'd';
