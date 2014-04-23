@@ -4,6 +4,7 @@
  * Licensed to CiviCRM under the GPL v3 or higher
  *
  * Written and contributed by Ward Vandewege <ward@fsf.org> (http://www.fsf.org)
+ * Modified by Lisa Marie Maginnis <lisa@fsf.org> (http://www.fsf.org)
  *
  */
 
