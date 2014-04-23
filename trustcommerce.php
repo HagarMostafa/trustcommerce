@@ -318,59 +318,19 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     }
   }
 
-  function cancelSubscriptionURL($entityID = NULL, $entity = NULL) {
-    if ($entityID && $entity == 'membership') {
-      require_once 'CRM/Contact/BAO/Contact/Utils.php';
-      $contactID = CRM_Core_DAO::getFieldValue("CRM_Member_DAO_Membership", $entityID, "contact_id");
-      $checksumValue = CRM_Contact_BAO_Contact_Utils::generateChecksum($contactID, NULL, 'inf');
-
-      return CRM_Utils_System::url('civicrm/contribute/unsubscribe',
-        "reset=1&mid={$entityID}&cs={$checksumValue}", TRUE, NULL, FALSE, FALSE
-      );
-    }
-
-    return ($this->_mode == 'test') ? 'https://test.authorize.net' : 'https://authorize.net';
-  }
-
   function cancelSubscription() {
-    $template = CRM_Core_Smarty::singleton();
+    $tc_params['custid'] = $this->_getParam('user_name');
+    $tc_params['password'] = $this->_getParam('password');
+    $tc_params['action'] = 'unstore';
+    $tc_params['billingid'] = CRM_Utils_Array::value('subscriptionId', $params);
 
-    $template->assign('subscriptionType', 'cancel');
+    $result = tclink_send($tc_params);
 
-    $template->assign('apiLogin', $this->_getParam('apiLogin'));
-    $template->assign('paymentKey', $this->_getParam('paymentKey'));
-    $template->assign('subscriptionId', $this->_getParam('subscriptionId'));
-
-    $arbXML = $template->fetch('CRM/Contribute/Form/Contribution/AuthorizeNetARB.tpl');
-
-    // submit to authorize.net
-    $submit = curl_init($this->_paymentProcessor['url_recur']);
-    if (!$submit) {
+    /* Test if call failed */
+    if(!$result) {
       return self::error(9002, 'Could not initiate connection to payment gateway');
     }
-
-    curl_setopt($submit, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($submit, CURLOPT_HTTPHEADER, array("Content-Type: text/xml"));
-    curl_setopt($submit, CURLOPT_HEADER, 1);
-    curl_setopt($submit, CURLOPT_POSTFIELDS, $arbXML);
-    curl_setopt($submit, CURLOPT_POST, 1);
-    curl_setopt($submit, CURLOPT_SSL_VERIFYPEER, 0);
-
-    $response = curl_exec($submit);
-
-    if (!$response) {
-      return self::error(curl_errno($submit), curl_error($submit));
-    }
-
-    curl_close($submit);
-
-    $responseFields = $this->_ParseArbReturn($response);
-
-    if ($responseFields['resultCode'] == 'Error') {
-      return self::error($responseFields['code'], $responseFields['text']);
-    }
-
-    // carry on cancelation procedure
+    /* We are done, pass success */
     return TRUE;
   }
  
