@@ -215,13 +215,30 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
     $result = tclink_send($tclink);
 
+    $result = _getTrustCommereceResponse($result);
+
+    if($result == 0) {
+      /* Transaction was sucessful */
+      $params['trxn_id'] = $result['transid'];         /* Get our transaction ID */
+      $params['gross_amount'] = $tclink['amount']/100; /* Convert from cents to dollars */
+      return $params;
+    } else {
+      /* Transaction was *not* successful */
+      return $result;
+    }
+  }
+
+  /* Parses a response from TC via the tclink_send() command.
+   * @param  $reply array The result of a call to tclink_send().
+   * @return mixed self::error() if transaction failed, otherwise returns 0.
+   */
+  function _getTrustCommerceResponse($reply) {
 
     /* DUPLIATE CODE, please refactor. ~lisa */
     if (!$result) {
       return self::error(9002, 'Could not initiate connection to payment gateway');
     }
 
-   
     switch($result['status']) {
     case self::AUTH_APPROVED:
       // It's all good
@@ -240,14 +257,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       return self::error(9002, 'Could not initiate connection to payment gateway');
       break;
     }
-    
-    // Success
-
-    $params['trxn_id'] = $result['transid'];
-    $params['gross_amount'] = $tclink['amount'] / 100;
-
-    return $params;
-
+    return 0;
   }
 
   function _getTrustCommerceFields() {
