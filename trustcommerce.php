@@ -85,12 +85,6 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       return self::error(9001, 'TrustCommerce requires that the tclink module is loaded');
     }
 
-    /*
-         * recurpayment function does not compile an array & then proces it -
-         * - the tpl does the transformation so adding call to hook here
-         * & giving it a change to act on the params array
-         */
-
     $newParams = $params;
     if (CRM_Utils_Array::value('is_recur', $params) &&
       $params['contributionRecurID']
