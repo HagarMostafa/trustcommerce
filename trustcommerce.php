@@ -289,16 +289,6 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     if ($this->_mode != 'live') {
       $fields['demo'] = 'y';
     }
-    // TODO FIXME remove
-    foreach ($fields as $field => $value) {
-      if ($field == 'custid') $value = '********';
-      if ($field == 'password') $value = '********';
-      if ($field == 'cc') $value = '********';
-      if ($field == 'cvv') $value = '********';
-      if ($field == 'exp') $value = '********';
-      error_log("fields: $field => $value");
-    }
-
     return $fields;
   }
 
