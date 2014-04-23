@@ -98,10 +98,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     }
 
     /* Pass our cooked params to the alter hook, per Core/Payment/Dummy.php */
-    CRM_Utils_Hook::alterPaymentProcessorParams($this,
-      $params,
-      $tc_params
-    );
+    CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $tc_params);
 
     // TrustCommerce will not refuse duplicates, so we should check if the user already submitted this transaction
     if ($this->_checkDupe($tc_params['ticket'])) {
