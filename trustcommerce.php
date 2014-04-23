@@ -154,58 +154,33 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     case 'year':
       $cycle = 'y';
       break;
-    default:
-      return self::error(9001, 'Payment interval not set! Unable to process payment.');
-      break;
+    }
+    
+    /* Translate frequency interval from CiviCRM -> TC
+     * Payments are the same, HOWEVER a payment of 1 (forever) should be 0 in TC */
+    if($payments == 1) {
+      $payments = 0;
     }
 
+    $fields['cycle'] = '1'.$cycle;   /* The billing cycle in years, months, weeks, or days. */
+    $fields['payments'] = $payments;
+    $fields['action'] = 'store';      /* Change our mode to `store' mode. */
 
-    $params['authnow'] = 'y';    /* Process this payment `now' */    
-    $params['cycle'] = $cycle;   /* The billing cycle in years, months, weeks, or days. */
-    $params['payments'] = $payments;
-
-
-    $tclink = $this->_getTrustCommerceFields();
-
-    // Set up our call for hook_civicrm_paymentProcessor,
-    // since we now have our parameters as assigned for the AIM back end.
-    CRM_Utils_Hook::alterPaymentProcessorParams($this,
-      $params,
-      $tclink
-    );
-
-    // TrustCommerce will not refuse duplicates, so we should check if the user already submitted this transaction
-    if ($this->_checkDupe($tclink['ticket'])) {
-      return self::error(9004, 'It appears that this transaction is a duplicate.  Have you already submitted the form once?  If so there may have been a connection problem. You can try your transaction again.  If you continue to have problems please contact the site administrator.');
-    }
-
-    $result = tclink_send($tclink);
-
-    $result = _getTrustCommereceResponse($result);
-
-    if($result == 0) {
-      /* Transaction was sucessful */
-      $params['trxn_id'] = $result['transid'];         /* Get our transaction ID */
-      $params['gross_amount'] = $tclink['amount']/100; /* Convert from cents to dollars */
-      return $params;
-    } else {
-      /* Transaction was *not* successful */
-      return $result;
-    }
+    return $fields;
   }
 
   /* Parses a response from TC via the tclink_send() command.
    * @param  $reply array The result of a call to tclink_send().
    * @return mixed self::error() if transaction failed, otherwise returns 0.
    */
-  function _getTrustCommerceResponse($reply) {
+  function _getTrustCommerceReply($reply) {
 
     /* DUPLIATE CODE, please refactor. ~lisa */
-    if (!$result) {
+    if (!$reply) {
       return self::error(9002, 'Could not initiate connection to payment gateway');
     }
 
-    switch($result['status']) {
+    switch($reply['status']) {
     case self::AUTH_APPROVED:
       // It's all good
       break;
