@@ -322,7 +322,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $tc_params['custid'] = $this->_getParam('user_name');
     $tc_params['password'] = $this->_getParam('password');
     $tc_params['action'] = 'unstore';
-    $tc_params['billingid'] = CRM_Utils_Array::value('subscriptionId', $params);
+    $tc_params['billingid'] = CRM_Utils_Array::value('trxn_id', $params);
 
     $result = tclink_send($tc_params);
 
