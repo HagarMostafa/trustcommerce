@@ -318,7 +318,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     }
   }
 
-  function cancelSubscription() {
+  function cancelSubscription(&$message = '', $params = array()) {
     $tc_params['custid'] = $this->_getParam('user_name');
     $tc_params['password'] = $this->_getParam('password');
     $tc_params['action'] = 'unstore';
