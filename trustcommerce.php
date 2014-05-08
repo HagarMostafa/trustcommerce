@@ -124,7 +124,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $reply = tclink_send($tc_params);
 
     /* Parse our reply */
-    $result = $this->_getTrustCommerceReply($reply);
+    $result = $this->_getTCReply($reply);
 
     if($result == 0) {
       /* We were successful, congrats. Lets wrap it up:
@@ -185,7 +185,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
    * @param  $reply array The result of a call to tclink_send().
    * @return mixed self::error() if transaction failed, otherwise returns 0.
    */
-  function _getTrustCommerceReply($reply) {
+  function _getTCReply($reply) {
 
     /* DUPLIATE CODE, please refactor. ~lisa */
     if (!$reply) {
