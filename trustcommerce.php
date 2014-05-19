@@ -149,7 +149,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
   function _logger($params) {
     $msg = '';
-    foreach ($param as $key => $data) {
+    foreach ($params as $key => $data) {
       /* Delete any data we should not be writing to disk. This includes:
        * custid, password, cc, exp, and cvv
        */
