@@ -121,7 +121,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     }
 
     /* Call the TC API, and grab the reply */
-    $reply = $this->_getTCRequest($tc_params);
+    $reply = $this->_sendTCRequest($tc_params);
 
     /* Parse our reply */
     $result = $this->_getTCReply($reply);
@@ -148,23 +148,23 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
   function _logger($params) {
+    $msg = '';
     foreach ($param as $key => $data) {
       /* Delete any data we should not be writing to disk. This includes:
        * custid, password, cc, exp, and cvv
        */
-      $data = '';
       switch($key) {
-      'custid':
-      'password':
-      'cc':
-      'exp':
-      'cvv':
+      case 'custid':
+      case 'password':
+      case 'cc':
+      case 'exp':
+      case 'cvv':
 	break;
       default:
-	$data .= ' '.$key.' => '.$data;
+	$msg .= ' '.$key.' => '.$data;
       }
     }
-    error_log('TrustCommerce:'.$data)
+    error_log('TrustCommerce:'.$msg);
   }
 
   /**
@@ -364,7 +364,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $tc_params['action'] = 'unstore';
     $tc_params['billingid'] = CRM_Utils_Array::value('trxn_id', $params);
     
-    $result = $this->_getTCRequest($tc_params);
+    $result = $this->_sendTCRequest($tc_params);
 
     /* Test if call failed */
     if(!$result) {
