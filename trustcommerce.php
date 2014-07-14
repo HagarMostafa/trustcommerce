@@ -151,13 +151,11 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     }
   }
 
+  /* Return TRUE when client is either IP or agent blacklisted, or
+   * FALSE otherwise.
+   */
   function _isBlacklisted() {
-    if($this->_isIPBlacklisted()) {
-      return TRUE;
-    } else if($this->_IsAgentBlacklisted()) {
-      return TRUE;
-    } 
-    return FALSE;
+    return $this->_isIPBlacklisted() || $this->_IsAgentBlacklisted();
   }
 
   function _isAgentBlacklisted() {
