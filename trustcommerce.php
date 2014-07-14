@@ -33,6 +33,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   CONST AUTH_DECLINED = 'decline';
   CONST AUTH_BADDATA = 'baddata';
   CONST AUTH_ERROR = 'error';
+  CONST AUTH_BLACKLIST = 'blacklisted';
 
   static protected $_mode = NULL;
 
@@ -68,6 +69,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     srand(time());
     $this->_setParam('sequence', rand(1, 1000));
     $this->logging_level     = TRUSTCOMMERCE_LOGGING_LEVEL;
+
   }
 
   /**
@@ -120,8 +122,15 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       return self::error(9004, 'It appears that this transaction is a duplicate.  Have you already submitted the form once?  If so there may have been a connection problem. You can try your transaction again.  If you continue to have problems please contact the site administrator.');
     }
 
-    /* Call the TC API, and grab the reply */
-    $reply = $this->_sendTCRequest($tc_params);
+    /* This implements a local blacklist, and passes us though as a normal failure
+     * if the luser is on the blacklist. */
+    if(!$this->_isBlacklisted()) {
+      /* Call the TC API, and grab the reply */
+      $reply = $this->_sendTCRequest($tc_params);
+    } else {
+      $this->_logger($tc_params);
+      $reply['status'] = self::AUTH_BLACKLIST;
+    }
 
     /* Parse our reply */
     $result = $this->_getTCReply($reply);
@@ -140,6 +149,42 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       /* Otherwise we return the error object */
       return $result;
     }
+  }
+
+  function _isBlacklisted() {
+    if($this->_isIPBlacklisted()) {
+      return TRUE;
+    } else if($this->_IsAgentBlacklisted()) {
+      return TRUE;
+    } 
+    return FALSE;
+  }
+
+  function _isAgentBlacklisted() {
+    $ip = $_SERVER['REMOTE_ADDR'];
+    $agent = $_SERVER['HTTP_USER_AGENT'];
+    $dao = CRM_Core_DAO::executeQuery('SELECT * FROM `trustcommerce_useragent_blacklist`');
+    while($dao->fetch()) {
+      if(preg_match('/'.$dao->name.'/', $agent) === 1) {
+	error_log(' [client '.$ip.'] [agent '.$agent.'] - Blacklisted by USER_AGENT rule #'.$dao->id);
+	return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  function _isIPBlacklisted() {
+    $ip = $_SERVER['REMOTE_ADDR'];
+    $ip = ip2long($ip);
+    $blacklist = array();
+    $dao = CRM_Core_DAO::executeQuery('SELECT * FROM `trustcommerce_blacklist`');
+    while($dao->fetch()) {
+      if($ip >= $dao->start && $ip <= $dao->end) {
+	error_log('[client '.$ip.'] [agent '.$agent.'] Blacklisted by IP rule #'.$dao->id);
+	return TRUE;
+      }
+    }
+    return FALSE;
   }
 
   function _sendTCRequest($request) {
@@ -164,7 +209,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 	$msg .= ' '.$key.' => '.$data;
       }
     }
-    error_log('TrustCommerce:'.$msg);
+    error_log('[client '.$_SERVER['REMOTE_ADDR'].'] TrustCommerce:'.$msg);
   }
 
   /**
@@ -217,7 +262,12 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       return self::error(9002, 'Could not initiate connection to payment gateway');
     }
 
+    $this->_logger($reply);
+
     switch($reply['status']) {
+    case self::AUTH_BLACKLIST:
+      return self::error(9001, "Your transaction was declined: error #90210");
+      break;
     case self::AUTH_APPROVED:
       // It's all good
       break;
