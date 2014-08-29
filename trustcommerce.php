@@ -175,12 +175,13 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
   function _isIPBlacklisted() {
     $ip = $_SERVER['REMOTE_ADDR'];
+    $agent = $_SERVER['HTTP_USER_AGENT'];
     $ip = ip2long($ip);
     $blacklist = array();
     $dao = CRM_Core_DAO::executeQuery('SELECT * FROM `trustcommerce_blacklist`');
     while($dao->fetch()) {
       if($ip >= $dao->start && $ip <= $dao->end) {
-	error_log('[client '.$ip.'] [agent '.$agent.'] Blacklisted by IP rule #'.$dao->id);
+	error_log('[client '.long2ip($ip).'] [agent '.$agent.'] Blacklisted by IP rule #'.$dao->id);
 	return TRUE;
       }
     }
