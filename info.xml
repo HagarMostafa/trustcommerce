@@ -9,11 +9,11 @@
   </urls>
   <license>AGPL3</license>
   <maintainer>
-    <author>Nico Cesar, Ward Vandewege</author>
+    <author>Nico Cesar, Ward Vandewege, Lisa Marie Maginnis</author>
     <email>sysadmin@fsf.org</email>
   </maintainer>
-  <releaseDate>2014-02-11</releaseDate>
-  <version>0.3</version>
+  <releaseDate>2014-08-29</releaseDate>
+  <version>0.4</version>
   <develStage>beta</develStage>
   <compatibility>
     <ver>4.4</ver>
