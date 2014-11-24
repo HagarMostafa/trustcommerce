@@ -151,11 +151,13 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     }
   }
 
-  /* Return TRUE when client is either IP or agent blacklisted, or
-   * FALSE otherwise.
-   */
   function _isBlacklisted() {
-    return $this->_isIPBlacklisted() || $this->_IsAgentBlacklisted();
+    if($this->_isIPBlacklisted()) {
+      return TRUE;
+    } else if($this->_IsAgentBlacklisted()) {
+      return TRUE;
+    } 
+    return FALSE;
   }
 
   function _isAgentBlacklisted() {
@@ -164,8 +166,8 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $dao = CRM_Core_DAO::executeQuery('SELECT * FROM `trustcommerce_useragent_blacklist`');
     while($dao->fetch()) {
       if(preg_match('/'.$dao->name.'/', $agent) === 1) {
-        error_log(' [client '.$ip.'] [agent '.$agent.'] - Blacklisted by USER_AGENT rule #'.$dao->id);
-        return TRUE;
+	error_log(' [client '.$ip.'] [agent '.$agent.'] - Blacklisted by USER_AGENT rule #'.$dao->id);
+	return TRUE;
       }
     }
     return FALSE;
@@ -179,8 +181,8 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $dao = CRM_Core_DAO::executeQuery('SELECT * FROM `trustcommerce_blacklist`');
     while($dao->fetch()) {
       if($ip >= $dao->start && $ip <= $dao->end) {
-        error_log('[client '.$ip.'] [agent '.$agent.'] Blacklisted by IP rule #'.$dao->id);
-        return TRUE;
+	error_log('[client '.long2ip($ip).'] [agent '.$agent.'] Blacklisted by IP rule #'.$dao->id);
+	return TRUE;
       }
     }
     return FALSE;
