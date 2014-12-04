@@ -278,7 +278,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       // See TC documentation for more info
       switch($reply['declinetype']) {
       case 'avs':
-	return self::error(9009, "Your transaction was declined for address verification reasons. If your address was correct please contract us at donate@fsf.org before attempting to retry your transaction.");
+	return self::error(9009, "Your transaction was declined for address verification reasons. If your address was correct please contact us at donate@fsf.org before attempting to retry your transaction.");
 	break;
       }
       return self::error(9009, "Your transaction was declined: {$reply['declinetype']}");
