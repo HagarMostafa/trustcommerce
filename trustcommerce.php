@@ -276,6 +276,11 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       // TODO FIXME be more or less specific? 
       // declinetype can be: decline, avs, cvv, call, expiredcard, carderror, authexpired, fraud, blacklist, velocity
       // See TC documentation for more info
+      switch($reply['declinetype']) {
+      case 'avs':
+	return self::error(9009, "Your transaction was declined for address verification reasons. If your address was correct please contract us at donate@fsf.org before attempting to retry your transaction.");
+	break;
+      }
       return self::error(9009, "Your transaction was declined: {$reply['declinetype']}");
       break;
     case self::AUTH_BADDATA:
