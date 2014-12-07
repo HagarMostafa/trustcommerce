@@ -140,7 +140,12 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
        * Convert back to dollars
        * Save the transaction ID
        */
+
+      if (CRM_Utils_Array::value('is_recur', $params) && $params['contributionRecurID']) {
+	$params['contributionRecurID'] = $reply['billingid'];
+      } 
       $params['trxn_id'] = $reply['transid'];
+
       $params['gross_amount'] = $tc_params['amount'] / 100;
 
       return $params;
@@ -247,6 +252,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
     $fields['cycle'] = '1'.$cycle;   /* The billing cycle in years, months, weeks, or days. */
     $fields['payments'] = $payments;
+    $fields['authnow'] = 'y';
     $fields['action'] = 'store';      /* Change our mode to `store' mode. */
 
     return $fields;
