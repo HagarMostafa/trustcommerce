@@ -20,6 +20,7 @@
  *
  * Written and contributed by Ward Vandewege <ward@fsf.org> (http://www.fsf.org)
  * Modified by Lisa Marie Maginnis <lisa@fsf.org> (http://www.fsf.org)
+ * Copyright © 2015 David Thompson <davet@gnu.org>
  *
  */
 
@@ -160,6 +161,60 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       /* Otherwise we return the error object */
       return $result;
     }
+  }
+
+  /**
+   * Update CC info for a recurring contribution
+   */
+  function updateSubscriptionBillingInfo(&$message = '', $params = array()) {
+    $expYear = $params['credit_card_exp_date']['Y'];
+    $expMonth = $params['credit_card_exp_date']['M'];
+
+    $tc_params = array(
+      'custid' => $this->_paymentProcessor['user_name'],
+      'password' => $this->_paymentProcessor['password'],
+      'action' => 'store',
+      'billingid' => $params['subscriptionId'],
+      'avs' => 'y', // Enable address verification
+      'address1' => $params['street_address'],
+      'zip' => $params['postal_code'],
+      'name' => $this->_formatBillingName($params['first_name'],
+                                          $params['last_name']),
+      'cc' => $params['credit_card_number'],
+      'cvv' => $params['cvv2'],
+      'exp' => $this->_formatExpirationDate($expYear, $expMonth),
+      'amount' => $this->_formatAmount($params['amount']),
+    );
+
+    CRM_Utils_Hook::alterPaymentProcessorParams($this, $params, $tc_params);
+
+    $reply = $this->_sendTCRequest($tc_params);
+    $result = $this->_getTCReply($reply);
+
+    if($result === 0) {
+      $message = 'Successfully updated TC billing id ' . $tc_params['billingid'];
+
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+  }
+
+  // TODO: Use the formatting functions throughout the entire class to
+  // dedupe the conversions done elsewhere in a less reusable way.
+  function _formatAmount($amount) {
+    return $amount * 100;
+  }
+
+  function _formatBillingName($firstName, $lastName) {
+    return "$firstName $lastName";
+  }
+
+  function _formatExpirationDate($year, $month) {
+    $exp_month = str_pad($month, 2, '0', STR_PAD_LEFT);
+    $exp_year = substr($year, -2);
+
+    return "$exp_month$exp_year";
   }
 
   function _isBlacklisted() {
