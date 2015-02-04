@@ -110,8 +110,9 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $tc_params = $this->_getTrustCommerceFields();
 
     /* Are we recurring? If so add the extra API fields. */
-    if (CRM_Utils_Array::value('is_recur', $params) && $params['contributionRecurID']) {
+    if (CRM_Utils_Array::value('is_recur', $params) == 1) {
       $tc_params = $this->_getRecurPaymentFields($tc_params);
+      $recur=1;
     }
 
     /* Pass our cooked params to the alter hook, per Core/Payment/Dummy.php */
@@ -141,9 +142,14 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
        * Save the transaction ID
        */
 
-      if (CRM_Utils_Array::value('is_recur', $params) && $params['contributionRecurID']) {
-	$params['contributionRecurID'] = $reply['billingid'];
-      } 
+      if (array_key_exists('billingid', $reply)) {
+        $params['recurr_profile_id'] = $reply['billingid'];
+        CRM_Core_DAO::setFieldValue(
+          'CRM_Contribute_DAO_ContributionRecur',
+          $this->_getParam('contributionRecurID'),
+          'processor_id', $reply['billingid']
+        );
+      }
       $params['trxn_id'] = $reply['transid'];
 
       $params['gross_amount'] = $tc_params['amount'] / 100;
