@@ -435,7 +435,32 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     /* We are done, pass success */
     return TRUE;
   }
- 
+
+  function changeSubscriptionAmount(&$message = '', $params = array()) {
+    $tc_params['custid'] = $this->_getParam('user_name');
+    $tc_params['password'] = $this->_getParam('password');
+    $tc_params['action'] = 'store';
+
+    $tc_params['billingid'] = CRM_Utils_Array::value('subscriptionId', $params);
+    $tc_params['payments'] = CRM_Utils_Array::value('installments', $params);
+    $tc_params['amount'] = CRM_Utils_Array::value('amount', $params) * 100;
+
+    if($tc_params['payments'] == 1) {
+      $tc_params['payments'] = 0;
+    }
+    $reply = $this->_sendTCRequest($tc_params);
+    $result = $this->_getTCReply($reply);
+
+    /* Test if call failed */
+    if(!$result) {
+      return self::error(9002, 'Could not initiate connection to payment gateway');
+    }
+
+    /* We are done, pass success */
+    return TRUE;
+
+    }
+
   public function install() {
     return TRUE;
   }
