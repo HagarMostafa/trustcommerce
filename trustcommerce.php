@@ -222,7 +222,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       return TRUE;
     } else if($this->_IsAgentBlacklisted()) {
       return TRUE;
-    } 
+    }
     return FALSE;
   }
 
@@ -304,7 +304,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       $cycle = 'y';
       break;
     }
-    
+
     /* Translate frequency interval from CiviCRM -> TC
      * Payments are the same, HOWEVER a payment of 1 (forever) should be 0 in TC */
     if($payments == 1) {
@@ -341,7 +341,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       // It's all good
       break;
     case self::AUTH_DECLINED:
-      // TODO FIXME be more or less specific? 
+      // TODO FIXME be more or less specific?
       // declinetype can be: decline, avs, cvv, call, expiredcard, carderror, authexpired, fraud, blacklist, velocity
       // See TC documentation for more info
       switch($reply['declinetype']) {
@@ -487,7 +487,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $tc_params['password'] = $this->_getParam('password');
     $tc_params['action'] = 'unstore';
     $tc_params['billingid'] = CRM_Utils_Array::value('trxn_id', $params);
-    
+
     $result = $this->_sendTCRequest($tc_params);
 
     /* Test if call failed */
