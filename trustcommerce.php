@@ -499,8 +499,8 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
   function changeSubscriptionAmount(&$message = '', $params = array()) {
-    $tc_params['custid'] = $this->_getParam('user_name');
-    $tc_params['password'] = $this->_getParam('password');
+    $tc_params['custid'] = $this->_paymentProcessor['user_name'];
+    $tc_params['password'] = $this->_paymentProcessor['password'];
     $tc_params['action'] = 'store';
 
     $tc_params['billingid'] = CRM_Utils_Array::value('subscriptionId', $params);
