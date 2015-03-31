@@ -313,8 +313,6 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
     $fields['cycle'] = '1'.$cycle;   /* The billing cycle in years, months, weeks, or days. */
     $fields['payments'] = $payments;
-    $fields['authnow'] = 'y';
-    $fields['start'] = date("Y-m-d"); /* Start date is required when 'authnow' is used. */
     $fields['action'] = 'store';      /* Change our mode to `store' mode. */
 
     return $fields;
