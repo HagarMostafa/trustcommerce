@@ -35,6 +35,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   CONST AUTH_BADDATA = 'baddata';
   CONST AUTH_ERROR = 'error';
   CONST AUTH_BLACKLIST = 'blacklisted';
+  CONST AUTH_ACCEPTED = 'accepted';
 
   static protected $_mode = NULL;
 
@@ -336,6 +337,8 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       return self::error(9001, "Your transaction was declined: error #90210");
       break;
     case self::AUTH_APPROVED:
+      break;
+    case self::AUTH_ACCEPTED:
       // It's all good
       break;
     case self::AUTH_DECLINED:
