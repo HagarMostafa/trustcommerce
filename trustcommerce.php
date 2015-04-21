@@ -511,11 +511,6 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $reply = $this->_sendTCRequest($tc_params);
     $result = $this->_getTCReply($reply);
 
-    /* Test if call failed */
-    if(!$result) {
-      return self::error(9002, 'Could not initiate connection to payment gateway');
-    }
-
     /* We are done, pass success */
     return TRUE;
 
