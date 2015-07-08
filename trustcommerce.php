@@ -327,7 +327,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
     /* DUPLIATE CODE, please refactor. ~lisa */
     if (!$reply) {
-      return self::error(9002, 'Could not initiate connection to payment gateway');
+      return self::error(9002, 'Could not initiate connection to payment gateway.');
     }
 
     $this->_logger($reply);
