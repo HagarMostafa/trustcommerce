@@ -117,6 +117,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
    * our singleton.
    *
    * @param string $mode the mode of operation: live or test
+   * @param CRM_Core_Payment The payment processor object.
    *
    * @return void
    */
@@ -142,6 +143,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
    * The singleton function used to manage this object
    *
    * @param string $mode the mode of operation: live or test
+   * @param CRM_Core_Payment The payment processor object.
    *
    * @return object
    * @static
@@ -156,6 +158,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
   /**
    * Submit a payment using the TC API
+   *
    * @param  array $params The params we will be sending to tclink_send()
    * @return mixed An array of our results, or an error object if the transaction fails.
    * @public
@@ -227,12 +230,18 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
   /**
-   * Update CC info for a recurring contribution
+   * Hook to update CC info for a recurring contribution
+   *
+   * @param string $message The message to dispaly on update success/failure
+   * @param array  $params  The paramters to pass to the payment processor
+   *
+   * @return bool True if successful, false on failure
    */
   function updateSubscriptionBillingInfo(&$message = '', $params = array()) {
     $expYear = $params['credit_card_exp_date']['Y'];
     $expMonth = $params['credit_card_exp_date']['M'];
 
+    // TODO: This should be our build in params set function, not by hand!
     $tc_params = array(
       'custid' => $this->_paymentProcessor['user_name'],
       'password' => $this->_paymentProcessor['password'],
@@ -255,6 +264,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $result = $this->_getTCReply($reply);
 
     if($result === 0) {
+      // TODO: Respect vaules for $messages passed in from our caller
       $message = 'Successfully updated TC billing id ' . $tc_params['billingid'];
 
       return TRUE;
@@ -265,22 +275,53 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
   // TODO: Use the formatting functions throughout the entire class to
   // dedupe the conversions done elsewhere in a less reusable way.
-  function _formatAmount($amount) {
+
+  /**
+   * Internal routine to convert from CiviCRM amounts to TC amounts.
+   *
+   * Multiplies the amount by 100.
+   *
+   * @param float $amount The currency value to convert.
+   *
+   * @return int The TC amount
+   */
+  private function _formatAmount($amount) {
     return $amount * 100;
   }
 
-  function _formatBillingName($firstName, $lastName) {
+  /**
+   * Internal routine to format the billing name for TC
+   *
+   * @param string $firstName The first name to submit to TC
+   * @param string $lastName The last name to submit to TC
+   *
+   * @return string The TC name format, "$firstName $lastName"
+   */
+  private function _formatBillingName($firstName, $lastName) {
     return "$firstName $lastName";
   }
 
-  function _formatExpirationDate($year, $month) {
+  /**
+   * Formats the expiration date for TC
+   *
+   * @param int $year  The credit card expiration year
+   * @param int $month The credit card expiration year
+   *
+   * @return The TC CC expiration date format, "$month$year"
+   */
+  private function _formatExpirationDate($year, $month) {
     $exp_month = str_pad($month, 2, '0', STR_PAD_LEFT);
     $exp_year = substr($year, -2);
 
     return "$exp_month$exp_year";
   }
 
-  function _isBlacklisted() {
+  /**
+   * Checks to see if the source IP/USERAGENT are blacklisted.
+   *
+   * @return bool TRUE if on the blacklist, FALSE if not.
+   */
+  private function _isBlacklisted() {
     if($this->_isIPBlacklisted()) {
       return TRUE;
     } else if($this->_IsAgentBlacklisted()) {
@@ -289,7 +330,13 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     return FALSE;
   }
 
-  function _isAgentBlacklisted() {
+  /**
+   * Checks to see if the source USERAGENT is blacklisted
+   *
+   * @return bool TRUE if on the blacklist, FALSE if not.
+   */
+  private function _isAgentBlacklisted() {
+    // TODO: fix DB calls to be more the CiviCRM way
     $ip = $_SERVER['REMOTE_ADDR'];
     $agent = $_SERVER['HTTP_USER_AGENT'];
     $dao = CRM_Core_DAO::executeQuery('SELECT * FROM `trustcommerce_useragent_blacklist`');
@@ -302,7 +349,13 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     return FALSE;
   }
 
-  function _isIPBlacklisted() {
+  /**
+   * Checks to see if the source IP is blacklisted
+   *
+   * @return bool TRUE if on the blacklist, FALSE if not.
+   */
+  private function _isIPBlacklisted() {
+    // TODO: fix DB calls to be more the CiviCRM way
     $ip = $_SERVER['REMOTE_ADDR'];
     $agent = $_SERVER['HTTP_USER_AGENT'];
     $ip = ip2long($ip);
@@ -317,11 +370,27 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     return FALSE;
   }
 
+  /**
+   * Sends the API call to TC for processing
+   *
+   * @param array $request The array of paramaters to pass the TC API
+   *
+   * @return array The response from the TC API
+   */
   function _sendTCRequest($request) {
     $this->_logger($request);
     return tclink_send($request);
   }
 
+  /**
+   * Logs paramaters from TC along with the remote address of the client
+   *
+   * Will log paramaters via the error_log() routine. For security reasons
+   * the following values are not logged (skipped): custid, password, cc
+   * exp, and cvv.
+   *
+   * @param array $params The paramaters to log
+   */
   function _logger($params) {
     $msg = '';
     foreach ($params as $key => $data) {
@@ -344,6 +413,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
   /**
    * Gets the recurring billing fields for the TC API
+   *
    * @param  array $fields The fields to modify.
    * @return array The fields for tclink_send(), modified for recurring billing.
    * @public
@@ -425,6 +495,11 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     return 0;
   }
 
+  /**
+   * Generate the basic paramaters to send the TC API
+   *
+   * @return array The array of paramaters to pass _sendTCRequest()
+   */
   function _getTrustCommerceFields() {
     // Total amount is from the form contribution field
     $amount = $this->_getParam('total_amount');
@@ -545,6 +620,14 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     }
   }
 
+  /**
+   * Hook to cancel a recurring contribution
+   *
+   * @param string $message The message to dispaly on update success/failure
+   * @param array  $params  The paramters to pass to the payment processor
+   *
+   * @return bool True if successful, false on failure
+   */
   function cancelSubscription(&$message = '', $params = array()) {
     $tc_params['custid'] = $this->_getParam('user_name');
     $tc_params['password'] = $this->_getParam('password');
@@ -561,6 +644,14 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     return TRUE;
   }
 
+  /**
+   * Hook to update amount billed for a recurring contribution
+   *
+   * @param string $message The message to dispaly on update success/failure
+   * @param array  $params  The paramters to pass to the payment processor
+   *
+   * @return bool True if successful, false on failure
+   */
   function changeSubscriptionAmount(&$message = '', $params = array()) {
     $tc_params['custid'] = $this->_paymentProcessor['user_name'];
     $tc_params['password'] = $this->_paymentProcessor['password'];
@@ -581,10 +672,16 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
     }
 
+  /**
+   * Installs the trustcommerce module (currently a dummy)
+   */
   public function install() {
     return TRUE;
   }
 
+  /**
+   * Uninstalls the trustcommerce module (currently a dummy)
+   */
   public function uninstall() {
     return TRUE;
   }
