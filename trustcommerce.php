@@ -451,9 +451,12 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     return $fields;
   }
 
-  /* Parses a response from TC via the tclink_send() command.
-   * @param  $reply array The result of a call to tclink_send().
-   * @return mixed self::error() if transaction failed, otherwise returns 0.
+  /** Parses a response from TC via the tclink_send() command.
+   *
+   * @param array $reply The result of a call to tclink_send().
+   *
+   * @return mixed|CRM_Core_Error CRM_Core_Error object if transaction failed, otherwise
+   * returns 0.
    */
   function _getTCReply($reply) {
 
@@ -568,6 +571,14 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     return CRM_Utils_Array::value($field, $this->_params, '');
   }
 
+  /**
+   * Sets our error message/logging information for CiviCRM
+   *
+   * @param int $errorCode The numerical code of the error, defaults to 9001
+   * @param string $errorMessage The error message to display/log
+   *
+   * @return CRM_Core_Error The error object with message and code.
+   */
   function &error($errorCode = NULL, $errorMessage = NULL) {
     $e = CRM_Core_Error::singleton();
     if ($errorCode) {
