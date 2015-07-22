@@ -24,39 +24,103 @@
  *
  */
 
-// Define logging level (0 = off, 4 = log everything)
+/**
+  * CiviCRM payment processor module for TrustCommerece.
+  *
+  * This module uses the TrustCommerece API via the tc_link module (GPLv3)
+  * distributed by TrustCommerece.com. For full documentation on the 
+  * TrustCommerece API, please see the TCDevGuide for more information:
+  * https://vault.trustcommerce.com/downloads/TCDevGuide.htm
+  *
+  * This module supports the following features: Single credit/debit card
+  * transactions, AVS checking, recurring (create, update, and cancel
+  * subscription) optional blacklist with fail2ban,
+  *
+  * @copyright Ward Vandewege <ward@fsf.org> (http://www.fsf.org)
+  * @copyright Lisa Marie Maginnis <lisa@fsf.org> (http://www.fsf.org)
+  * @copyright David Thompson <davet@gnu.org>
+  * @version   0.4
+  * @package   org.fsf.payment.trustcommerce
+  */
+
+/**
+ * Define logging level (0 = off, 4 = log everything)
+ */
 define('TRUSTCOMMERCE_LOGGING_LEVEL', 4);
 
+/**
+ * Load the CiviCRM core payment class so we can extend it.
+ */
 require_once 'CRM/Core/Payment.php';
+
+/**
+ * The payment processor object, it extends CRM_Core_Payment.
+ */
 class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
+
+  /**#@+
+   * Constants
+   */
+  /**
+   * This is our default charset, currently unused.
+   */
   CONST CHARSET = 'iso-8859-1';
+  /**
+   * The API response value for transaction approved.
+   */
   CONST AUTH_APPROVED = 'approve';
+  /**
+   * The API response value for transaction declined.
+   */
   CONST AUTH_DECLINED = 'decline';
+  /**
+   * The API response value for baddata passed to the TC API.
+   */
   CONST AUTH_BADDATA = 'baddata';
+  /**
+   * The API response value for an error in the TC API call.
+   */
   CONST AUTH_ERROR = 'error';
+  /**
+   * The API response value for blacklisted in our local blacklist
+   */
   CONST AUTH_BLACKLIST = 'blacklisted';
+  /**
+   * The API response value for approved status per the TCDevGuide.
+   */
   CONST AUTH_ACCEPTED = 'accepted';
 
+  /**
+   * The current mode of the payment processor, valid values are: live, demo.
+   * @static
+   * @var string
+   */
   static protected $_mode = NULL;
-
+  /**
+   * The array of params cooked and passed to the TC API via tc_link().
+   * @static
+   * @var array
+   */
   static protected $_params = array();
 
   /**
    * We only need one instance of this object. So we use the singleton
    * pattern and cache the instance in this variable
-   *
-   * @var object
    * @static
+   * @var object
    */
   static private $_singleton = NULL;
 
   /**
-   * Constructor
+   * Sets our basic TC API paramaters (username, password). Also sets up:
+   * logging level, processor name, the mode (live/demo), and creates/copies
+   * our singleton.
    *
    * @param string $mode the mode of operation: live or test
    *
    * @return void
-   */ function __construct($mode, &$paymentProcessor) {
+   */
+  function __construct($mode, &$paymentProcessor) {
     $this->_mode = $mode;
 
     $this->_paymentProcessor = $paymentProcessor;
@@ -75,16 +139,14 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
   /**
-   * singleton function used to manage this object
+   * The singleton function used to manage this object
    *
    * @param string $mode the mode of operation: live or test
    *
    * @return object
    * @static
-   *
    */
-  static
-  function &singleton($mode, &$paymentProcessor) {
+  static function &singleton($mode, &$paymentProcessor) {
     $processorName = $paymentProcessor['name'];
     if (self::$_singleton[$processorName] === NULL) {
       self::$_singleton[$processorName] = new org_fsf_payment_trustcommerce($mode, $paymentProcessor);
@@ -461,7 +523,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
   /**
-   * This function checks to see if we have the right config values
+   * Checks to see if we have the manditory config values set.
    *
    * @return string the error message if any
    * @public
