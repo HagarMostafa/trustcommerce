@@ -122,7 +122,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
    * @return void
    */
   function __construct($mode, &$paymentProcessor) {
-    $this->_mode = $mode;
+    self::$_mode = $mode;
 
     $this->_paymentProcessor = $paymentProcessor;
 
@@ -137,23 +137,6 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $this->_setParam('sequence', rand(1, 1000));
     $this->logging_level     = TRUSTCOMMERCE_LOGGING_LEVEL;
 
-  }
-
-  /**
-   * The singleton function used to manage this object
-   *
-   * @param string $mode the mode of operation: live or test
-   * @param CRM_Core_Payment The payment processor object.
-   *
-   * @return object
-   * @static
-   */
-  static function &singleton($mode, &$paymentProcessor) {
-    $processorName = $paymentProcessor['name'];
-    if (self::$_singleton[$processorName] === NULL) {
-      self::$_singleton[$processorName] = new org_fsf_payment_trustcommerce($mode, $paymentProcessor);
-    }
-    return self::$_singleton[$processorName];
   }
 
   /**
@@ -539,7 +522,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     $exp_year = substr($this->_getParam('year'),-2);
     $fields['exp'] = "$exp_month$exp_year";
 
-    if ($this->_mode != 'live') {
+    if (self::$_mode != 'live') {
       $fields['demo'] = 'y';
     }
     return $fields;
@@ -568,7 +551,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
    * not set
    */
   function _getParam($field) {
-    return CRM_Utils_Array::value($field, $this->_params, '');
+    return CRM_Utils_Array::value($field, self::$_params, '');
   }
 
   /**
@@ -604,7 +587,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
       return FALSE;
     }
     else {
-      $this->_params[$field] = $value;
+      self::$_params[$field] = $value;
     }
   }
 
