@@ -140,6 +140,23 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
   /**
+   * The singleton function used to manage this object
+   *
+   * @param string $mode the mode of operation: live or test
+   * @param CRM_Core_Payment The payment processor object.
+   *
+   * @return object
+   * @static
+   */
+  /*  static function &singleton($mode, &$paymentProcessor) {
+    $processorName = $paymentProcessor['name'];
+    if (self::$_singleton[$processorName] === NULL) {
+      self::$_singleton[$processorName] = new org_fsf_payment_trustcommerce($mode, $paymentProcessor);
+    }
+    return self::$_singleton[$processorName];
+    }*/
+
+  /**
    * Submit a payment using the TC API
    *
    * @param  array $params The params we will be sending to tclink_send()
@@ -175,37 +192,39 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
     /* This implements a local blacklist, and passes us though as a normal failure
      * if the luser is on the blacklist. */
-    if(!$this->_isBlacklisted()) {
+    if(!$this->_isBlacklisted($tc_params)) {
       /* Call the TC API, and grab the reply */
       $reply = $this->_sendTCRequest($tc_params);
     } else {
       $this->_logger($tc_params);
       $reply['status'] = self::AUTH_BLACKLIST;
+      usleep(rand(1000000,10000000));
     }
 
     /* Parse our reply */
     $result = $this->_getTCReply($reply);
 
-    if($result == 0) {
-      /* We were successful, congrats. Lets wrap it up:
-       * Convert back to dollars
-       * Save the transaction ID
-       */
-
-      if (array_key_exists('billingid', $reply)) {
-        $params['recurr_profile_id'] = $reply['billingid'];
-        CRM_Core_DAO::setFieldValue(
-          'CRM_Contribute_DAO_ContributionRecur',
-          $this->_getParam('contributionRecurID'),
-          'processor_id', $reply['billingid']
-        );
+    if(!is_object($result)) {
+      if($result == 0) {
+	/* We were successful, congrats. Lets wrap it up:
+	 * Convert back to dollars
+	 * Save the transaction ID
+	 */
+	
+	if (array_key_exists('billingid', $reply)) {
+	  $params['recurr_profile_id'] = $reply['billingid'];
+	  CRM_Core_DAO::setFieldValue(
+				      'CRM_Contribute_DAO_ContributionRecur',
+				      $this->_getParam('contributionRecurID'),
+				      'processor_id', $reply['billingid']
+				      );
+	}
+	$params['trxn_id'] = $reply['transid'];
+	
+	$params['gross_amount'] = $tc_params['amount'] / 100;
+	
+	return $params;
       }
-      $params['trxn_id'] = $reply['transid'];
-
-      $params['gross_amount'] = $tc_params['amount'] / 100;
-
-      return $params;
-
     } else {
       /* Otherwise we return the error object */
       return $result;
@@ -299,18 +318,30 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
     return "$exp_month$exp_year";
   }
 
+  private function _isParamsBlacklisted($tc_params) {
+    if($tc_params['amount'] == 101) {
+      error_log("TrustCommerce: _isParamsBlacklisted() triggered");
+      return TRUE;
+    } else {
+      return FALSE;
+    }
+  }
+
   /**
    * Checks to see if the source IP/USERAGENT are blacklisted.
    *
    * @return bool TRUE if on the blacklist, FALSE if not.
    */
-  private function _isBlacklisted() {
+  private function _isBlacklisted($tc_params) {
     if($this->_isIPBlacklisted()) {
       return TRUE;
-    } else if($this->_IsAgentBlacklisted()) {
+    } else if($this->_isAgentBlacklisted()) {
+      return TRUE;
+    } else if($this->_isParamsBlacklisted($tc_params)) {
       return TRUE;
     }
     return FALSE;
+
   }
 
   /**
@@ -452,7 +483,7 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
 
     switch($reply['status']) {
     case self::AUTH_BLACKLIST:
-      return self::error(9001, "Your transaction was declined: error #90210");
+      return self::error(9001, "Your transaction was declined for address verification reasons. If your address was correct please contact us at donate@fsf.org before attempting to retry your transaction.");
       break;
     case self::AUTH_APPROVED:
       break;
