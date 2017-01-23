@@ -712,3 +712,4 @@ class org_fsf_payment_trustcommerce extends CRM_Core_Payment {
   }
 
 }
+
