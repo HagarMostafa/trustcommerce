@@ -1,23 +1,32 @@
-<?xml version="1.0" encoding="utf-8"?>
-<extension key="org.fsf.payment.trustcommerce" type="payment">
-  <downloadUrl>http://agpl.fsf.org/crm.fsf.org/CURRENT/trustcommerce-0.1.zip</downloadUrl>
+<?xml version="1.0"?>
+<extension key="org.fsf.payment.trustcommerce" type="module">
+  <downloadUrl>http://agpl.fsf.org/crm.fsf.org/CURRENT/trustcommerce.tar.gz</downloadUrl>
   <file>trustcommerce</file>
   <name>TrustCommerce</name>
   <description>TrustCommerce Payment Processor</description>
-  <urls> 
+  <urls>
     <url desc="FSF Homepage">http://www.fsf.org</url>
   </urls>
-  <license>AGPL3</license>
+  <license>AGPL-3.0</license>
   <maintainer>
-    <author>Nico Cesar, Ward Vandewege, Lisa Marie Maginnis, David Thompson</author>
-    <email>sysadmin@fsf.org</email>
+    <author>Nico Cesar, Ward Vandewege, Lisa Marie Maginnis, David Thompson, Andrew Engelbrecht</author>
+    <email>sysadmin@gnu.org</email>
   </maintainer>
-  <releaseDate>2014-08-29</releaseDate>
-  <version>0.4</version>
+  <urls>
+    <!-- <url desc="Main Extension Page">http://FIXME</url> -->
+    <!-- <url desc="Documentation">http://FIXME</url> -->
+    <!-- <url desc="Support">http://FIXME</url> -->
+    <url desc="Licensing">http://www.gnu.org/licenses/agpl-3.0.html</url>
+  </urls>
+  <releaseDate>2018-01-17</releaseDate>
+  <version>0.5</version>
   <develStage>beta</develStage>
   <compatibility>
-    <ver>4.4</ver>
+    <ver>4.7</ver>
   </compatibility>
+  <civix>
+    <namespace>CRM/TrustCommerce</namespace>
+  </civix>
   <comments>For support, please contact project team on the forums.</comments>
   <typeInfo>
    <userNameLabel>Vendor ID</userNameLabel>
@@ -29,7 +38,7 @@
    <urlRecurDefault>https://vault.trustcommerce.com/trans/</urlRecurDefault>
    <!-- 2014-02-11 nico@fsf.org : couldn't find a trustcommerce *test* URL -->
    <!-- seems it's done with credit card numbers. See: -->
-   <!-- https://vault.trustcommerce.com/downloads/TCDevGuide.html#testdata --> 
+   <!-- https://vault.trustcommerce.com/downloads/TCDevGuide.html#testdata -->
    <urlSiteTestDefault>https://vault.trustcommerce.com/trans/</urlSiteTestDefault>
    <urlApiTestDefault>https://vault.trustcommerce.com/trans/</urlApiTestDefault>
    <urlRecurTestDefault>https://vault.trustcommerce.com/trans/</urlRecurTestDefault>
