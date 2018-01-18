@@ -36,9 +36,8 @@
    <urlSiteDefault>https://vault.trustcommerce.com/trans/</urlSiteDefault>
    <urlApiDefault></urlApiDefault>
    <urlRecurDefault>https://vault.trustcommerce.com/trans/</urlRecurDefault>
-   <!-- 2014-02-11 nico@fsf.org : couldn't find a trustcommerce *test* URL -->
-   <!-- seems it's done with credit card numbers. See: -->
-   <!-- https://vault.trustcommerce.com/downloads/TCDevGuide.html#testdata -->
+   <!-- Testing is done by test-driving contrib pages and using a test credit card number. -->
+   <!-- https://vault.trustcommerce.com/downloads/TC_Link_API_Developer_Guide.pdf -->
    <urlSiteTestDefault>https://vault.trustcommerce.com/trans/</urlSiteTestDefault>
    <urlApiTestDefault>https://vault.trustcommerce.com/trans/</urlApiTestDefault>
    <urlRecurTestDefault>https://vault.trustcommerce.com/trans/</urlRecurTestDefault>

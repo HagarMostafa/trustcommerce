@@ -96,7 +96,7 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
    * @static
    * @var string
    */
-  static protected $_mode = 'live';
+  static protected $_mode = NULL;
   /**
    * The array of params cooked and passed to the TC API via tc_link().
    * @static
