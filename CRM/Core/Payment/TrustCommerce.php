@@ -96,13 +96,13 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
    * @static
    * @var string
    */
-  static protected $_mode = NULL;
+  protected $_mode = NULL;
   /**
    * The array of params cooked and passed to the TC API via tc_link().
    * @static
    * @var array
    */
-  static protected $_params = array();
+  protected $_params = array();
 
   /**
    * We only need one instance of this object. So we use the singleton
@@ -123,7 +123,7 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
    * @return void
    */
   function __construct($mode, &$paymentProcessor) {
-    self::$_mode = $mode;
+    $this->_mode = $mode;
 
     $this->_paymentProcessor = $paymentProcessor;
 
@@ -526,8 +526,10 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
       $amount = $this->_getParam('amount');
     }
     $fields = array();
-    $fields['custid'] = $this->_getParam('user_name');
-    $fields['password'] = $this->_getParam('password');
+
+    $fields['custid'] = $this->_paymentProcessor['user_name'];
+    $fields['password'] = $this->_paymentProcessor['password'];
+
     $fields['action'] = 'sale';
 
     // Enable address verification
@@ -554,7 +556,7 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
     $exp_year = substr($this->_getParam('year'),-2);
     $fields['exp'] = "$exp_month$exp_year";
 
-    if (self::$_mode != 'live') {
+    if ($this->_mode != 'live') {
       $fields['demo'] = 'y';
     }
     return $fields;
@@ -583,7 +585,11 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
    * not set
    */
   function _getParam($field) {
-    return CRM_Utils_Array::value($field, self::$_params, '');
+    $value = CRM_Utils_Array::value($field, $this->_params, '');
+    if ($xmlSafe) {
+      $value = str_replace(array('&', '"', "'", '<', '>'), '', $value);
+    }
+    return $value;
   }
 
   /**
@@ -619,7 +625,7 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
       return FALSE;
     }
     else {
-      self::$_params[$field] = $value;
+      $this->_params[$field] = $value;
     }
   }
 
