@@ -373,6 +373,10 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
     // TODO: fix DB calls to be more the CiviCRM way
     $ip = $_SERVER['REMOTE_ADDR'];
     $agent = $_SERVER['HTTP_USER_AGENT'];
+    # Disable on IPv6
+    if ( strpos(":", $ip) !== false ){
+      return TRUE;
+    }
     $ip = ip2long($ip);
     $blacklist = array();
     $dao = CRM_Core_DAO::executeQuery('SELECT * FROM `trustcommerce_blacklist`');
