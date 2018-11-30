@@ -541,6 +541,7 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
 
     $fields['address1'] = $this->_getParam('street_address');
     $fields['zip'] = $this->_getParam('postal_code');
+    $fields['country'] = $this->_getParam('country');
 
     $fields['name'] = $this->_getParam('billing_first_name') . ' ' . $this->_getParam('billing_last_name');
 
