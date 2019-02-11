@@ -320,12 +320,11 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
   }
 
   private function _isParamsBlacklisted($tc_params) {
-    if($tc_params['amount'] == 101) {
+    if($tc_params['address1'] == '230 Motley Dr') {
       error_log("TrustCommerce: _isParamsBlacklisted() triggered");
       return TRUE;
-    } else {
-      return FALSE;
     }
+    return FALSE;
   }
 
   /**
