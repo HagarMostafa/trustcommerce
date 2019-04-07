@@ -372,16 +372,11 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
     // TODO: fix DB calls to be more the CiviCRM way
     $ip = $_SERVER['REMOTE_ADDR'];
     $agent = $_SERVER['HTTP_USER_AGENT'];
-    # Disable on IPv6
-    if ( strpos(":", $ip) !== false ){
-      return TRUE;
-    }
-    $ip = ip2long($ip);
     $blacklist = array();
     $dao = CRM_Core_DAO::executeQuery('SELECT * FROM `trustcommerce_blacklist`');
     while($dao->fetch()) {
-      if($ip >= $dao->start && $ip <= $dao->end) {
-	error_log('[client '.long2ip($ip).'] [agent '.$agent.'] Blacklisted by IP rule #'.$dao->id);
+      if($ip == $dao->ip) {
+	error_log('[client '.$ip.'] [agent '.$agent.'] Blacklisted by IP rule #'.$dao->id);
 	return TRUE;
       }
     }
@@ -487,7 +482,7 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
 
     switch($reply['status']) {
     case self::AUTH_BLACKLIST:
-      return self::error(9001, "Your transaction was declined for address verification reasons. If your address was correct please contact us at donate@fsf.org before attempting to retry your transaction.");
+      return self::error(9009, "Your transaction was declined. Please check the correctness of your credit card information, including CC number, expiration date and CVV code.  ");
       break;
     case self::AUTH_APPROVED:
       break;
