@@ -537,6 +537,17 @@ class CRM_Core_Payment_TrustCommerce extends CRM_Core_Payment {
     $fields['zip'] = $this->_getParam('postal_code');
     $fields['country'] = $this->_getParam('country');
 
+    /**
+     * Fix AVS problem when a non-US country, has address1 and zip both starting
+     * with a letter.
+     */
+    if( ($fields['country'] !== '840' && $fields['country'] !== 840)                                                                    
+     && (preg_match("/^\D/", $fields['zip']) === 1) 
+     && (preg_match("/^\D/", $fields['address1']) === 1) ) {
+      // Add a number to the beginning of the address.
+      $fields['address1'] = preg_replace("/^/", "1 ", $fields['address1']);
+    }
+
     $fields['name'] = $this->_getParam('billing_first_name') . ' ' . $this->_getParam('billing_last_name');
 
     // This assumes currencies where the . is used as the decimal point, like USD
